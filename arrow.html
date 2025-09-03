@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubbles App</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        canvas {
+            border: 2px solid #333;
+            background-color: white;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        #hitBtn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        #hitBtn:hover {
+            background-color: #c0392b;
+        }
+        
+        #hitBtn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        #resetBtn {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        #resetBtn:hover {
+            background-color: #2980b9;
+        }
+        
+        .status {
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bubbles App</h1>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    
+    <div class="controls">
+        <button id="hitBtn">Hit</button>
+        <button id="resetBtn">Reset</button>
+    </div>
+    
+    <div class="status" id="status">Ready to play!</div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const hitBtn = document.getElementById('hitBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const status = document.getElementById('status');
+
+        let circle = {
+            x: 120,
+            y: 200,
+            radius: 50,
+            color: ''
+        };
+
+        let arrow = {
+            x: 680,
+            y: 200,
+            width: 80,
+            height: 8,
+            isMoving: false,
+            speed: 5,
+            originalX: 680
+        };
+
+        let isAnimating = false;
+
+        function getRandomColor() {
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b', '#6c5ce7', '#a29bfe'];
+            let newColor;
+            do {
+                newColor = colors[Math.floor(Math.random() * colors.length)];
+            } while (newColor === circle.color);
+            return newColor;
+        }
+
+        function drawCircle() {
+            ctx.beginPath();
+            ctx.arc(circle.x, circle.y, circle.radius, 0, 2 * Math.PI);
+            ctx.fillStyle = circle.color;
+            ctx.fill();
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function drawArrow() {
+            ctx.fillStyle = '#2c3e50';
+            
+            ctx.fillRect(arrow.x + 20, arrow.y - arrow.height/2, arrow.width - 20, arrow.height);
+            
+            ctx.beginPath();
+            ctx.moveTo(arrow.x + 20, arrow.y - 15);
+            ctx.lineTo(arrow.x, arrow.y);
+            ctx.lineTo(arrow.x + 20, arrow.y + 15);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function draw() {
+            clearCanvas();
+            drawCircle();
+            drawArrow();
+        }
+
+        function init() {
+            circle.color = getRandomColor();
+            arrow.x = arrow.originalX;
+            arrow.isMoving = false;
+            isAnimating = false;
+            hitBtn.disabled = false;
+            status.textContent = 'Ready to play!';
+            draw();
+        }
+
+        function checkCollision() {
+            const arrowTip = arrow.x;
+            const distance = Math.sqrt(
+                Math.pow(arrowTip - circle.x, 2) + 
+                Math.pow(arrow.y - circle.y, 2)
+            );
+            return distance <= circle.radius;
+        }
+
+        function animateArrow() {
+            if (!arrow.isMoving) return;
+
+            arrow.x -= arrow.speed;
+
+            if (checkCollision()) {
+                arrow.isMoving = false;
+                circle.color = getRandomColor();
+                status.textContent = 'Hit! Color changed!';
+                isAnimating = false;
+                draw();
+                return;
+            }
+
+            if (arrow.x < -arrow.width) {
+                arrow.isMoving = false;
+                status.textContent = 'Arrow missed!';
+                isAnimating = false;
+                return;
+            }
+
+            draw();
+            requestAnimationFrame(animateArrow);
+        }
+
+        hitBtn.addEventListener('click', function() {
+            if (isAnimating) return;
+            
+            isAnimating = true;
+            arrow.isMoving = true;
+            hitBtn.disabled = true;
+            status.textContent = 'Arrow moving...';
+            animateArrow();
+        });
+
+        resetBtn.addEventListener('click', function() {
+            init();
+        });
+
+        init();
+    </script>
+</body>
+</html>
